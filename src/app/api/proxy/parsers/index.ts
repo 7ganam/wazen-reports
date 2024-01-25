@@ -96,7 +96,6 @@ const parseAmazon = (html: string, url: string): parserReturn => {
   $("script").remove();
   $("style").remove();
 
-  fs.writeFileSync("amazon.html", $.html());
   let available = false;
   let price = 0;
   if (
@@ -345,8 +344,6 @@ const parseEhabCenter = (html: string, url: string): parserReturn => {
 
   let available = false;
   let price = 0;
-
-  fs.writeFileSync("ehabcenter.html", $.html());
 
   // Check if the element is found
   if ($.html().includes("متوفر في المخزون") || $.html().includes("In stock")) {
