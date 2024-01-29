@@ -178,7 +178,7 @@ const parseBtech = (html: string, url: string): parserReturn => {
     };
   }
 
-  const priceSpan = $("span.price-container :nth-child(1)");
+  const priceSpan = $(`span[data-price-type="finalPrice"] :nth-child(1)`);
 
   // Check if the element is found
   if (priceSpan.length > 0) {

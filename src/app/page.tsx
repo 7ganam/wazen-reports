@@ -39,12 +39,6 @@ export default function Home() {
   const [_uploadError, setUploadError] = useState<string>("");
   const [uploadSuccess, setUploadSuccess] = useState(false);
 
-  const resetState = () => {
-    setIsUploading(false);
-    setUploadError("");
-    setUploadSuccess(false);
-  };
-
   const [data, setData] = useState([]);
   const fetchData = async (link: string, key: string) => {
     logProgress(`fetching data from : ${link}`);
@@ -74,7 +68,7 @@ export default function Home() {
         // Loop through each key in the column object
         for (const key in row) {
           if (row.hasOwnProperty(key)) {
-            if (key === "product_name" || key === "our_price") {
+            if (key === "product_name" || key === "wazen_price") {
               continue;
             }
             const value = row[key];
@@ -93,6 +87,7 @@ export default function Home() {
                 key,
                 price: "link_not_provided",
                 available: true,
+                wazen: row["wazen_price"],
               });
             }
           }
@@ -101,8 +96,6 @@ export default function Home() {
         // Wait for all promises to resolve
         const columnResults = await Promise.all(promises);
         setProccessedProductsCount((prevCount) => prevCount + 1);
-
-        console.log("columnResults:", columnResults);
 
         // trun columnResults into an object
         // the object has the format of {[elemnet.key]: element.price}
@@ -113,21 +106,34 @@ export default function Home() {
             }
             return acc;
           },
-          { product_name: row["product_name"] }
+          { product_name: row["product_name"], wazen: row["wazen_price"] }
         );
 
-        console.log("columnResultsObj:", columnResultsObj);
         // Save the results in a new object in the results array
         result.push(columnResultsObj);
       }
+
+      const proccessedResutls = processResults(result);
+      console.log("result:", result);
+      console.log("proccessedResutls:", proccessedResutls);
 
       const csv = Papa.unparse(result);
       var csvData = new Blob([csv], { type: "text/csv;charset=utf-8;" });
       var csvURL = window.URL.createObjectURL(csvData);
       var testLink = document.createElement("a");
       testLink.href = csvURL;
-      testLink.setAttribute("test", "test.csv");
+      testLink.setAttribute("download", "report.csv");
       testLink.click();
+
+      setTimeout(() => {
+        const csv2 = Papa.unparse(proccessedResutls);
+        var csvData2 = new Blob([csv2], { type: "text/csv;charset=utf-8;" });
+        var csvURL2 = window.URL.createObjectURL(csvData2);
+        var testLink2 = document.createElement("a");
+        testLink2.href = csvURL2;
+        testLink2.setAttribute("download", "summary_report.csv");
+        testLink2.click();
+      }, 1000);
 
       console.log("result:", result);
 
@@ -209,11 +215,6 @@ export default function Home() {
   };
 
   const [progress, setProgress] = useState(0);
-  // Example usage
-  const handleButtonClick = () => {
-    logProgress(progress.toString());
-    setProgress(progress + 1);
-  };
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-24 bg-slate-200">
@@ -273,4 +274,306 @@ export const LoadingSpinner = () => {
       <path d="M21 12a9 9 0 1 1-6.219-8.56" />
     </svg>
   );
+};
+
+type results = {
+  amazon: number | string;
+  btech: number | string;
+  cairo_sales: number | string;
+  ehabcenter: number | string;
+  elghazawy: number | string;
+  eliraqi: number | string;
+  elsindbad: number | string;
+  jumia: number | string;
+  noon: number | string;
+  product_name: string;
+  raneen: number | string;
+  rayashop: number | string;
+  wazen: number;
+};
+
+// const processResults = (results: results[]) => {
+//   console.log("results:", results);
+//   // loop over the results
+//   // for each result
+//   // create new object with all the keys except for product_name
+//   // remove any entry which has a non number value
+//   // calcualte if waze price is high by checking: if waze price is higher than the lowest price by 100
+//   // calcualte if waze price is low by checking: if waze price is lower than the lowest price by 100
+//   // create an object of the format
+//   //{product_name: "product_name", wazen_price: "waze_price", wazen_price_is_high: boolean, closest_price_below:number, closeste_price_below_provide:string,
+//   // lowest_price:number, lowest_price_provider: string, wazen_price_is_low: boolean, closest_price_above:number, closest_price_above_provider:string, highest_price:number, highest_price_provider:string}
+
+//   const proccessedResutls = [
+//     [
+//       "product_name",
+//       "wazen_price",
+//       "wazen_price_is_high",
+//       "closest_price_below",
+//       "closest_price_below_provider",
+//       "lowest_price",
+//       "lowest_price_provider",
+//       "wazen_price_is_low",
+//       "closest_price_above",
+//       "closest_price_above_provider",
+//       "highest_price",
+//       "highest_price_provider",
+//     ],
+//   ];
+//   for (let i = 0; i < results.length; i++) {
+//     const result = results[i];
+//     const { product_name, ...rest } = result;
+
+//     //remove any entry which has a non number value
+//     const filteredRest = Object.entries(rest).reduce((acc, [key, value]) => {
+//       if (typeof value === "number") {
+//         // @ts-ignore
+//         acc[key] = value;
+//       }
+//       return acc;
+//     }, {});
+
+//     // @ts-ignore
+//     const wazenPrice = filteredRest.wazen;
+//     console.log("wazenPrice:", wazenPrice);
+//     //find lowest price and lowest price provider
+//     //@ts-ignore
+//     const lowestPrice = Math.min(...Object.values(filteredRest));
+//     console.log("lowestPrice:", lowestPrice);
+//     const lowestPriceProvider = Object.keys(filteredRest).find(
+//       // @ts-ignore
+//       (key) => filteredRest[key] === lowestPrice
+//     );
+//     console.log("lowestPriceProvider:", lowestPriceProvider);
+//     //find highest price and highest price provider
+//     //@ts-ignore
+//     const highestPrice = Math.max(...Object.values(filteredRest));
+//     console.log("highestPrice:", highestPrice);
+//     const highestPriceProvider = Object.keys(filteredRest).find(
+//       //@ts-ignore
+//       (key) => filteredRest[key] === highestPrice
+//     );
+//     console.log("highestPriceProvider:", highestPriceProvider);
+//     // calcualte if wazen price is high by checking: if wazen price is higher than the lowest price by 100
+//     const wazenPriceIsHigh = wazenPrice > lowestPrice + 100;
+//     console.log("wazenPriceIsHigh:", wazenPriceIsHigh);
+
+//     // calcualte if wazen price is low by checking: if wazen price is lower than the lowest price by 100
+//     const wazenPriceIsLow = wazenPrice < lowestPrice - 100;
+//     console.log("wazenPriceIsLow:", wazenPriceIsLow);
+
+//     let closestPriceAbove = "";
+//     let closestPriceAboveProvider = "";
+//     let closestPriceBelow = "";
+//     let closestPriceBelowProvider = "";
+
+//     if (wazenPriceIsHigh) {
+//       // find the closest price below
+//       //@ts-ignore
+//       closestPriceBelow = Object.values(filteredRest).reduce(
+//         //@ts-ignore
+//         (acc: number, curr: number) => {
+//           if (curr < wazenPrice && curr > acc) {
+//             return curr;
+//           }
+//           return acc;
+//         },
+//         0
+//       );
+//       //@ts-ignore
+//       closestPriceBelowProvider = Object.keys(filteredRest).find(
+//         //@ts-ignore
+//         (key) => filteredRest[key] === closestPriceBelow
+//       );
+//       proccessedResutls.push([
+//         product_name,
+//         wazenPrice,
+//         wazenPriceIsHigh,
+//         closestPriceBelow,
+//         closestPriceBelowProvider,
+//         lowestPrice,
+//         lowestPriceProvider,
+//         wazenPriceIsLow,
+//         "",
+//         "",
+//         "",
+//         "",
+//       ]);
+//     }
+//     if (wazenPriceIsLow) {
+//       // find the closest price above
+//       //@ts-ignore
+//       closestPriceAbove = Object.values(filteredRest).reduce(
+//         //@ts-ignore
+//         (acc: number, curr: number) => {
+//           if (curr > wazenPrice && curr < acc) {
+//             return curr;
+//           }
+//           return acc;
+//         },
+//         100000
+//       );
+//       //@ts-ignore
+//       closestPriceAboveProvider = Object.keys(filteredRest).find(
+//         //@ts-ignore
+//         (key) => filteredRest[key] === closestPriceAbove
+//       );
+//       proccessedResutls.push([
+//         product_name,
+//         wazenPrice,
+//         wazenPriceIsHigh,
+//         "",
+//         "",
+//         "",
+//         "",
+//         wazenPriceIsLow,
+//         closestPriceAbove,
+//         closestPriceAboveProvider,
+//         highestPrice,
+//         highestPriceProvider,
+//       ]);
+//     }
+//   }
+
+//   return proccessedResutls;
+// };
+
+const processResults = (results: results[]) => {
+  console.log("results:", results);
+  // loop over the results
+  // for each result
+  // create new object with all the keys except for product_name
+  // remove any entry which has a non number value
+  // calcualte if waze price is high by checking: if waze price is higher than the lowest price by 100
+  // calcualte if waze price is low by checking: if waze price is lower than the lowest price by 100
+  // create an object of the format
+  //{product_name: "product_name", wazen_price: "waze_price", wazen_price_is_high: boolean, closest_price_below:number, closeste_price_below_provide:string,
+  // lowest_price:number, lowest_price_provider: string, wazen_price_is_low: boolean, closest_price_above:number, closest_price_above_provider:string, highest_price:number, highest_price_provider:string}
+
+  const proccessedResutls = [
+    [
+      "product_name",
+      "wazen_price",
+      "wazen_price_is_high",
+      "closest_price_below",
+      "closest_price_below_provider",
+      "lowest_price",
+      "lowest_price_provider",
+      "↔↔↔",
+      "wazen_price_is_low",
+      "closest_price_above",
+      "closest_price_above_provider",
+      "highest_price",
+      "highest_price_provider",
+    ],
+  ];
+  for (let i = 0; i < results.length; i++) {
+    const result = results[i];
+    const { product_name, wazen, ...rest } = result;
+    //remove any entry which has a non number value
+    const filteredRest = Object.entries(rest).reduce((acc, [key, value]) => {
+      if (typeof value === "number") {
+        // @ts-ignore
+        acc[key] = value;
+      }
+      return acc;
+    }, {});
+    if (Object.entries(filteredRest).length === 0) continue;
+    const wazen_price = wazen;
+    //find lowest price and lowest price provider
+    //@ts-ignore
+    const lowestPrice = Math.min(...Object.values(filteredRest));
+    const lowestPriceProvider = Object.keys(filteredRest).find(
+      // @ts-ignore
+      (key) => filteredRest[key] === lowestPrice
+    );
+    //find highest price and highest price provider
+    //@ts-ignore
+    const highestPrice = Math.max(...Object.values(filteredRest));
+    const highestPriceProvider = Object.keys(filteredRest).find(
+      //@ts-ignore
+      (key) => filteredRest[key] === highestPrice
+    );
+    // calcualte if wazen price is high by checking: if wazen price is higher than the lowest price by 100
+    const wazenPriceIsHigh = wazen_price > lowestPrice + 100;
+
+    // calcualte if wazen price is low by checking: if wazen price is lower than the lowest price by 100
+    const wazenPriceIsLow = wazen_price < lowestPrice - 100;
+
+    let closestPriceAbove = "";
+    let closestPriceAboveProvider = "";
+    let closestPriceBelow = "";
+    let closestPriceBelowProvider = "";
+
+    if (wazenPriceIsHigh) {
+      // find the closest price below
+      //@ts-ignore
+      closestPriceBelow = Object.values(filteredRest).reduce(
+        //@ts-ignore
+        (acc: number, curr: number) => {
+          if (curr < wazen_price && curr > acc) {
+            return curr;
+          }
+          return acc;
+        },
+        0
+      );
+      //@ts-ignore
+      closestPriceBelowProvider = Object.keys(filteredRest).find(
+        //@ts-ignore
+        (key) => filteredRest[key] === closestPriceBelow
+      );
+      proccessedResutls.push([
+        product_name,
+        wazen_price,
+        wazenPriceIsHigh,
+        closestPriceBelow,
+        closestPriceBelowProvider,
+        lowestPrice,
+        lowestPriceProvider,
+        "◀️▶️",
+        "➖",
+        "➖",
+        "➖",
+        "➖",
+        "➖",
+      ]);
+    }
+    if (wazenPriceIsLow) {
+      // find the closest price above
+      //@ts-ignore
+      closestPriceAbove = Object.values(filteredRest).reduce(
+        //@ts-ignore
+        (acc: number, curr: number) => {
+          if (curr > wazen_price && curr < acc) {
+            return curr;
+          }
+          return acc;
+        },
+        100000
+      );
+      //@ts-ignore
+      closestPriceAboveProvider = Object.keys(filteredRest).find(
+        //@ts-ignore
+        (key) => filteredRest[key] === closestPriceAbove
+      );
+      proccessedResutls.push([
+        product_name,
+        wazen_price,
+        "➖",
+        "➖",
+        "➖",
+        "➖",
+        "➖",
+        "◀️▶️",
+        wazenPriceIsLow,
+        closestPriceAbove,
+        closestPriceAboveProvider,
+        highestPrice,
+        highestPriceProvider,
+      ]);
+    }
+  }
+
+  return proccessedResutls;
 };
